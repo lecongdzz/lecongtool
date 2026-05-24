@@ -1,4 +1,4 @@
-package com.ttboost.tik.tok.followers.likes
+package com.lecongtool.proapp
 
 import android.graphics.Color
 import android.os.Bundle
@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
 
     private val tiktokLoadDelay = 2500L
     private val returnDelay = 800L
-    private val pkgName = "com.ttboost.tik.tok.followers.likes"
+    private val pkgName = "com.lecongtool.proapp"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
