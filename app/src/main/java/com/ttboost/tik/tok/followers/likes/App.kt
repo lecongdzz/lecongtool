@@ -1,4 +1,4 @@
-package com.ttboost.tik.tok.followers.likes
+package com.lecongtool.proapp
 
 import android.app.Application
 
@@ -8,4 +8,3 @@ class App : Application() {
         SecurityUtils.performSecurityChecks(this)
     }
 }
-
