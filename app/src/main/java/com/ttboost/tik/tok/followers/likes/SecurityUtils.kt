@@ -1,4 +1,4 @@
-package com.ttboost.tik.tok.followers.likes
+package com.lecongtool.proapp
 
 import android.content.Context
 import android.content.pm.PackageManager
