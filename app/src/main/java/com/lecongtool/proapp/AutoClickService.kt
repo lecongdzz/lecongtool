@@ -1,8 +1,8 @@
-// app/src/main/java/com/lecongtool/proapp/AutoClickService.kt
 package com.lecongtool.proapp
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.content.Intent
 import android.graphics.Path
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityEvent
@@ -20,14 +20,13 @@ class AutoClickService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
     override fun onInterrupt() {}
     
-    override fun onUnbind(intent: android.content.Intent?): Boolean {
+    override fun onUnbind(intent: Intent?): Boolean {
         instance = null
         return super.onUnbind(intent)
     }
 
     fun tap(x: Int, y: Int) {
         val path = Path().apply { moveTo(x.toFloat(), y.toFloat()) }
-        // Đã fix lỗi ép kiểu Long bắt buộc của Kotlin (0L, 50L) để vượt qua Exit code 1
         val gesture = GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path, 0L, 50L)).build()
         dispatchGesture(gesture, null, null)
     }
@@ -37,8 +36,8 @@ class AutoClickService : AccessibilityService() {
         for (keyword in keywords) {
             val nodes = root.findAccessibilityNodeInfosByText(keyword)
             for (node in nodes) {
-                if (node.text?.contains(keyword, ignoreCase = true) == true || 
-                    node.contentDescription?.contains(keyword, ignoreCase = true) == true) {
+                if (node.text?.toString()?.contains(keyword, ignoreCase = true) == true || 
+                    node.contentDescription?.toString()?.contains(keyword, ignoreCase = true) == true) {
                     val rect = Rect()
                     node.getBoundsInScreen(rect)
                     return Pair(rect.centerX(), rect.centerY())
@@ -53,8 +52,8 @@ class AutoClickService : AccessibilityService() {
         for (keyword in keywords) {
             val nodes = root.findAccessibilityNodeInfosByText(keyword)
             for (node in nodes) {
-                if (node.text?.contains(keyword, ignoreCase = true) == true || 
-                    node.contentDescription?.contains(keyword, ignoreCase = true) == true) {
+                if (node.text?.toString()?.contains(keyword, ignoreCase = true) == true || 
+                    node.contentDescription?.toString()?.contains(keyword, ignoreCase = true) == true) {
                     return true
                 }
             }
