@@ -1,16 +1,15 @@
+// app/src/main/java/com/lecongtool/proapp/MainActivity.kt
 package com.lecongtool.proapp
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import java.io.BufferedReader
-import java.io.DataOutputStream
-import java.io.InputStreamReader
-import java.util.regex.Pattern
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,7 +26,9 @@ class MainActivity : AppCompatActivity() {
 
     private val tiktokLoadDelay = 2500L
     private val returnDelay = 800L
-    private val pkgName = "com.lecongtool.proapp"
+    
+    // Gói ứng dụng mục tiêu cần làm nhiệm vụ (TTBoost)
+    private val targetPkgName = "com.ttboost.tik.tok.followers.likes"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,10 +70,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startAutomation() {
+        // BẮT BUỘC KIỂM TRA QUYỀN TRỢ NĂNG (ACCESSIBILITY SERVICE)
+        if (AutoClickService.instance == null) {
+            log("[!] Vui lòng bật quyền Trợ Năng cho ứng dụng này trong Cài Đặt!", "#FF0000")
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            return
+        }
+        
         if (!isRunning) {
             isRunning = true
-            log("[+] Khởi động hệ thống Auto...", "#00CC00")
+            log("[+] Khởi động hệ thống Auto (Bypass ADB)...", "#00CC00")
+            
+            // Kích hoạt gọi ứng dụng mục tiêu lên màn hình
+            launchTargetApp()
+
+            // Tách luồng quét Job vào Background Thread để tránh đóng băng giao diện
             Thread { runAutomationLoop() }.start()
+        }
+    }
+
+    private fun launchTargetApp() {
+        try {
+            val launchIntent = packageManager.getLaunchIntentForPackage(targetPkgName)
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                startActivity(launchIntent)
+                log("[+] Đã chuyển sang ứng dụng nhiệm vụ...", "#00FF00")
+            } else {
+                log("[⚠] Không tìm thấy App mục tiêu trên điện thoại!", "#FFA500")
+            }
+        } catch (e: Exception) {
+            log("[⚠] Lỗi mở App: ${e.message}", "#FFA500")
         }
     }
 
@@ -85,104 +113,71 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun executeRootCmd(cmd: String): String {
-        try {
-            val process = Runtime.getRuntime().exec("su")
-            val os = DataOutputStream(process.outputStream)
-            val isReader = BufferedReader(InputStreamReader(process.inputStream))
-            os.writeBytes("$cmd\n")
-            os.writeBytes("exit\n")
-            os.flush()
-            val output = StringBuilder()
-            var line: String?
-            while (isReader.readLine().also { line = it } != null) {
-                output.append(line).append("\n")
-            }
-            process.waitFor()
-            return output.toString()
-        } catch (e: Exception) {
-            return ""
-        }
-    }
-
-    private fun tapFast(x: Int, y: Int) {
-        Runtime.getRuntime().exec(arrayOf("su", "-c", "input tap $x $y &"))
-    }
-
-    private fun getScreenXml(): String {
-        executeRootCmd("uiautomator dump /sdcard/v.xml")
-        return executeRootCmd("cat /sdcard/v.xml")
-    }
-
-    private fun parseElementCoords(xmlData: String, keywords: List<String>): Pair<Int, Int>? {
-        for (keyword in keywords) {
-            val pattern = Pattern.compile("(text|content-desc)=\"[^\"]*\\Q$keyword\\E[^\"]*\".*?bounds=\"\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]\"", Pattern.CASE_INSENSITIVE)
-            val matcher = pattern.matcher(xmlData)
-            if (matcher.find()) {
-                val x1 = matcher.group(2)!!.toInt()
-                val y1 = matcher.group(3)!!.toInt()
-                val x2 = matcher.group(4)!!.toInt()
-                val y2 = matcher.group(5)!!.toInt()
-                return Pair((x1 + x2) / 2, (y1 + y2) / 2)
-            }
-        }
-        return null
-    }
-
     private fun runAutomationLoop() {
+        val service = AutoClickService.instance
+        if (service == null) {
+            isRunning = false
+            return
+        }
+
         while (isRunning) {
             log("[*] Đang nhận diện nhiệm vụ...", "#FFFFFF")
             var currentJob = ""
 
+            var scanRetries = 0
             while (isRunning) {
-                val xmlData = getScreenXml()
-                val skipCoords = parseElementCoords(xmlData, listOf("Skip", "Bỏ qua"))
+                scanRetries++
+                
+                // Kéo giãn luồng nếu tool bị kẹt ở màn hình cũ
+                if (scanRetries % 15 == 0) {
+                    launchTargetApp()
+                }
 
-                // 1. Kiểm tra lỗi hệ thống hoặc job rác -> Skip ngay
-                if (xmlData.contains("completed the task") || xmlData.contains("Error") || xmlData.contains("Unfollow after completing")) {
-                    if (skipCoords != null) tapFast(skipCoords.first, skipCoords.second)
+                if (service.checkTextExists("completed the task", "Error", "Unfollow after completing")) {
+                    val skipCoords = service.findCoordinatesByText("Skip", "Bỏ qua")
+                    if (skipCoords != null) service.tap(skipCoords.first, skipCoords.second)
                     log("[⚠] Lỗi Job hoặc đã làm -> ĐÃ SKIP!", "#FFA500")
                     Thread.sleep(1000)
                     continue
                 }
 
-                val followCoords = parseElementCoords(xmlData, listOf("Follow +", "Theo dõi +"))
-                val likeCoords = parseElementCoords(xmlData, listOf("Like +", "Thích +"))
+                val followCoords = service.findCoordinatesByText("Follow +", "Theo dõi +")
+                val likeCoords = service.findCoordinatesByText("Like +", "Thích +")
+                val skipCoords = service.findCoordinatesByText("Skip", "Bỏ qua")
                 
                 var jobFound = false
                 
-                // 2. Logic Lọc Job (Bắt buộc Skip nếu sai thể loại)
                 if (jobMode == "FOLLOW") {
                     if (likeCoords != null) {
-                        if (skipCoords != null) tapFast(skipCoords.first, skipCoords.second)
+                        if (skipCoords != null) service.tap(skipCoords.first, skipCoords.second)
                         log("-> Sai loại Job (Tym) -> ĐÃ SKIP!", "#FFA500")
                         Thread.sleep(1000)
                         continue
                     }
                     if (followCoords != null) {
-                        tapFast(followCoords.first, followCoords.second)
+                        service.tap(followCoords.first, followCoords.second)
                         currentJob = "follow"
                         jobFound = true
                     }
                 } else if (jobMode == "LIKE") {
                     if (followCoords != null) {
-                        if (skipCoords != null) tapFast(skipCoords.first, skipCoords.second)
+                        if (skipCoords != null) service.tap(skipCoords.first, skipCoords.second)
                         log("-> Sai loại Job (Follow) -> ĐÃ SKIP!", "#FFA500")
                         Thread.sleep(1000)
                         continue
                     }
                     if (likeCoords != null) {
-                        tapFast(likeCoords.first, likeCoords.second)
+                        service.tap(likeCoords.first, likeCoords.second)
                         currentJob = "like"
                         jobFound = true
                     }
                 } else if (jobMode == "TOTAL") {
                     if (followCoords != null) {
-                        tapFast(followCoords.first, followCoords.second)
+                        service.tap(followCoords.first, followCoords.second)
                         currentJob = "follow"
                         jobFound = true
                     } else if (likeCoords != null) {
-                        tapFast(likeCoords.first, likeCoords.second)
+                        service.tap(likeCoords.first, likeCoords.second)
                         currentJob = "like"
                         jobFound = true
                     }
@@ -192,26 +187,30 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (!isRunning) break
+            log("[+] Vào TikTok xử lý...", "#00FFFF")
             Thread.sleep(tiktokLoadDelay)
 
             if (currentJob == "like") {
-                tapFast(540, 960)
+                service.tap(540, 960)
                 Thread.sleep(80)
-                tapFast(540, 960)
+                service.tap(540, 960)
+                log("-> Đã thả Tym!", "#00FF00")
                 Thread.sleep(1000)
             } else if (currentJob == "follow") {
-                val tiktokXml = getScreenXml()
-                val coords = parseElementCoords(tiktokXml, listOf("Follow", "Theo dõi", "Follow button"))
+                val coords = service.findCoordinatesByText("Follow", "Theo dõi", "Follow button")
                 if (coords != null) {
-                    tapFast(coords.first, coords.second)
+                    service.tap(coords.first, coords.second)
                 } else {
-                    tapFast(900, 800)
+                    service.tap(900, 800)
                 }
+                log("-> Đã Follow!", "#00FF00")
                 Thread.sleep(1000)
             }
 
             if (!isRunning) break
-            Runtime.getRuntime().exec(arrayOf("su", "-c", "am start -n $pkgName/.MainActivity"))
+            
+            // Gọi lại app mục tiêu sau khi xử lý xong TikTok
+            launchTargetApp()
             Thread.sleep(returnDelay)
             
             earnedCoins += 10
