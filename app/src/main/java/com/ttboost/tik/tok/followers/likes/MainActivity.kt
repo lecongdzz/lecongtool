@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import java.io.BufferedReader
@@ -15,8 +14,6 @@ import java.util.regex.Pattern
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var etAdbIp: EditText
-    private lateinit var etTargetCoin: EditText
     private lateinit var btnOnlyFollow: Button
     private lateinit var btnOnlyLike: Button
     private lateinit var btnTotal: Button
@@ -26,7 +23,6 @@ class MainActivity : AppCompatActivity() {
     private var isRunning = false
     private var jobMode = "TOTAL"
     private var earnedCoins = 0
-    private var targetCoins = 1000
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private val tiktokLoadDelay = 2500L
@@ -37,8 +33,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        etAdbIp = findViewById(R.id.etAdbIp)
-        etTargetCoin = findViewById(R.id.etTargetCoin)
         btnOnlyFollow = findViewById(R.id.btnOnlyFollow)
         btnOnlyLike = findViewById(R.id.btnOnlyLike)
         btnTotal = findViewById(R.id.btnTotal)
@@ -51,19 +45,19 @@ class MainActivity : AppCompatActivity() {
     private fun setupButtons() {
         btnOnlyFollow.setOnClickListener {
             jobMode = "FOLLOW"
-            log("[*] Đã chọn chế độ: Chỉ Follow", "#00FFFF")
+            log("[*] CHẾ ĐỘ: Chỉ Follow (Tự động Skip Tym)", "#00FFFF")
             startAutomation()
         }
 
         btnOnlyLike.setOnClickListener {
             jobMode = "LIKE"
-            log("[*] Đã chọn chế độ: Chỉ Tym", "#00FFFF")
+            log("[*] CHẾ ĐỘ: Chỉ Tym (Tự động Skip Follow)", "#00FFFF")
             startAutomation()
         }
 
         btnTotal.setOnClickListener {
             jobMode = "TOTAL"
-            log("[*] Đã chọn chế độ: Tổng Lực", "#00FFFF")
+            log("[*] CHẾ ĐỘ: Tổng Lực", "#00FFFF")
             startAutomation()
         }
 
@@ -77,10 +71,7 @@ class MainActivity : AppCompatActivity() {
     private fun startAutomation() {
         if (!isRunning) {
             isRunning = true
-            targetCoins = etTargetCoin.text.toString().toIntOrNull() ?: 1000
-            val adbIp = etAdbIp.text.toString()
-            
-            log("[+] Kết nối thiết bị qua ADB $adbIp...", "#00CC00")
+            log("[+] Khởi động hệ thống Auto...", "#00CC00")
             Thread { runAutomationLoop() }.start()
         }
     }
@@ -89,6 +80,8 @@ class MainActivity : AppCompatActivity() {
         mainHandler.post {
             tvLogs.append("\n<font color='$colorHex'>$message</font>")
             tvLogs.text = android.text.Html.fromHtml(tvLogs.text.toString(), android.text.Html.FROM_HTML_MODE_LEGACY)
+            val scrollAmount = tvLogs.layout.getLineTop(tvLogs.lineCount) - tvLogs.height
+            if (scrollAmount > 0) tvLogs.scrollTo(0, scrollAmount)
         }
     }
 
@@ -137,17 +130,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runAutomationLoop() {
-        while (isRunning && earnedCoins < targetCoins) {
+        while (isRunning) {
             log("[*] Đang nhận diện nhiệm vụ...", "#FFFFFF")
             var currentJob = ""
 
             while (isRunning) {
                 val xmlData = getScreenXml()
+                val skipCoords = parseElementCoords(xmlData, listOf("Skip", "Bỏ qua"))
 
-                if (xmlData.contains("completed the task") || xmlData.contains("Error")) {
-                    val coords = parseElementCoords(xmlData, listOf("Skip", "Bỏ qua"))
-                    if (coords != null) tapFast(coords.first, coords.second)
-                    log("[⚠] Phát hiện lỗi, Skip!", "#FFA500")
+                // 1. Kiểm tra lỗi hệ thống hoặc job rác -> Skip ngay
+                if (xmlData.contains("completed the task") || xmlData.contains("Error") || xmlData.contains("Unfollow after completing")) {
+                    if (skipCoords != null) tapFast(skipCoords.first, skipCoords.second)
+                    log("[⚠] Lỗi Job hoặc đã làm -> ĐÃ SKIP!", "#FFA500")
                     Thread.sleep(1000)
                     continue
                 }
@@ -157,14 +151,41 @@ class MainActivity : AppCompatActivity() {
                 
                 var jobFound = false
                 
-                if ((jobMode == "FOLLOW" || jobMode == "TOTAL") && followCoords != null) {
-                    tapFast(followCoords.first, followCoords.second)
-                    currentJob = "follow"
-                    jobFound = true
-                } else if ((jobMode == "LIKE" || jobMode == "TOTAL") && likeCoords != null) {
-                    tapFast(likeCoords.first, likeCoords.second)
-                    currentJob = "like"
-                    jobFound = true
+                // 2. Logic Lọc Job (Bắt buộc Skip nếu sai thể loại)
+                if (jobMode == "FOLLOW") {
+                    if (likeCoords != null) {
+                        if (skipCoords != null) tapFast(skipCoords.first, skipCoords.second)
+                        log("-> Sai loại Job (Tym) -> ĐÃ SKIP!", "#FFA500")
+                        Thread.sleep(1000)
+                        continue
+                    }
+                    if (followCoords != null) {
+                        tapFast(followCoords.first, followCoords.second)
+                        currentJob = "follow"
+                        jobFound = true
+                    }
+                } else if (jobMode == "LIKE") {
+                    if (followCoords != null) {
+                        if (skipCoords != null) tapFast(skipCoords.first, skipCoords.second)
+                        log("-> Sai loại Job (Follow) -> ĐÃ SKIP!", "#FFA500")
+                        Thread.sleep(1000)
+                        continue
+                    }
+                    if (likeCoords != null) {
+                        tapFast(likeCoords.first, likeCoords.second)
+                        currentJob = "like"
+                        jobFound = true
+                    }
+                } else if (jobMode == "TOTAL") {
+                    if (followCoords != null) {
+                        tapFast(followCoords.first, followCoords.second)
+                        currentJob = "follow"
+                        jobFound = true
+                    } else if (likeCoords != null) {
+                        tapFast(likeCoords.first, likeCoords.second)
+                        currentJob = "like"
+                        jobFound = true
+                    }
                 }
 
                 if (jobFound) break else Thread.sleep(500)
@@ -194,12 +215,7 @@ class MainActivity : AppCompatActivity() {
             Thread.sleep(returnDelay)
             
             earnedCoins += 10
-            log("[] []Earned: $earnedCoins / Target: $targetCoins[] []", "#BF00FF")
-        }
-        
-        if (earnedCoins >= targetCoins) {
-            log("[+] ĐÃ HOÀN THÀNH MỤC TIÊU XU!", "#00CC00")
-            isRunning = false
+            log("[] []Hoàn thành! Đã chạy: $earnedCoins xu[] []", "#BF00FF")
         }
     }
 }
