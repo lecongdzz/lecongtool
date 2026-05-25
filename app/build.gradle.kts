@@ -9,25 +9,17 @@ android {
 
     defaultConfig {
         applicationId = "com.lecongtool.proapp"
-        minSdk = 21
+        minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "4.0"
-    }
-
-    signingConfigs {
-        getByName("debug") {
-            enableV1Signing = true
-            enableV2Signing = true
-        }
+        versionCode = 3
+        versionName = "5.0"
     }
 
     buildTypes {
-        debug {
+        getByName("debug") {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
         }
-        release {
+        getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
