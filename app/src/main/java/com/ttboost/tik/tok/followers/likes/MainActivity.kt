@@ -1,15 +1,14 @@
-// app/src/main/java/com/lecongtool/proapp/MainActivity.kt
 package com.lecongtool.proapp
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.widget.Button 
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.text.HtmlCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,8 +25,6 @@ class MainActivity : AppCompatActivity() {
 
     private val tiktokLoadDelay = 2500L
     private val returnDelay = 800L
-    
-    // Gói ứng dụng mục tiêu cần làm nhiệm vụ (TTBoost)
     private val targetPkgName = "com.ttboost.tik.tok.followers.likes"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,51 +37,38 @@ class MainActivity : AppCompatActivity() {
         tvLogs = findViewById(R.id.tvLogs)
         btnEmergencyStop = findViewById(R.id.btnEmergencyStop)
 
-        setupButtons()
-    }
-
-    private fun setupButtons() {
         btnOnlyFollow.setOnClickListener {
             jobMode = "FOLLOW"
-            log("[*] CHẾ ĐỘ: Chỉ Follow (Tự động Skip Tym)", "#00FFFF")
+            log("[*] CHẾ ĐỘ: Chỉ Follow", "#00FFFF")
             startAutomation()
         }
-
         btnOnlyLike.setOnClickListener {
             jobMode = "LIKE"
-            log("[*] CHẾ ĐỘ: Chỉ Tym (Tự động Skip Follow)", "#00FFFF")
+            log("[*] CHẾ ĐỘ: Chỉ Tym", "#00FFFF")
             startAutomation()
         }
-
         btnTotal.setOnClickListener {
             jobMode = "TOTAL"
             log("[*] CHẾ ĐỘ: Tổng Lực", "#00FFFF")
             startAutomation()
         }
-
         btnEmergencyStop.setOnClickListener {
             isRunning = false
-            log("[!] ⏹ DỪNG TOOL KHẨN CẤP THÀNH CÔNG", "#FF0000")
+            log("[!] ĐÃ DỪNG TOOL KHẨN CẤP", "#FF0000")
             android.os.Process.killProcess(android.os.Process.myPid())
         }
     }
 
     private fun startAutomation() {
-        // BẮT BUỘC KIỂM TRA QUYỀN TRỢ NĂNG (ACCESSIBILITY SERVICE)
         if (AutoClickService.instance == null) {
-            log("[!] Vui lòng bật quyền Trợ Năng cho ứng dụng này trong Cài Đặt!", "#FF0000")
+            log("[!] Vui lòng bật quyền Trợ Năng cho Tool!", "#FF0000")
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             return
         }
-        
         if (!isRunning) {
             isRunning = true
-            log("[+] Khởi động hệ thống Auto (Bypass ADB)...", "#00CC00")
-            
-            // Kích hoạt gọi ứng dụng mục tiêu lên màn hình
+            log("[+] Khởi động Auto...", "#00CC00")
             launchTargetApp()
-
-            // Tách luồng quét Job vào Background Thread để tránh đóng băng giao diện
             Thread { runAutomationLoop() }.start()
         }
     }
@@ -95,9 +79,8 @@ class MainActivity : AppCompatActivity() {
             if (launchIntent != null) {
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 startActivity(launchIntent)
-                log("[+] Đã chuyển sang ứng dụng nhiệm vụ...", "#00FF00")
             } else {
-                log("[⚠] Không tìm thấy App mục tiêu trên điện thoại!", "#FFA500")
+                log("[⚠] Không tìm thấy App TTBoost!", "#FFA500")
             }
         } catch (e: Exception) {
             log("[⚠] Lỗi mở App: ${e.message}", "#FFA500")
@@ -106,32 +89,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun log(message: String, colorHex: String) {
         mainHandler.post {
-            tvLogs.append("\n<font color='$colorHex'>$message</font>")
-            tvLogs.text = android.text.Html.fromHtml(tvLogs.text.toString(), android.text.Html.FROM_HTML_MODE_LEGACY)
+            tvLogs.append(HtmlCompat.fromHtml("<br><font color='$colorHex'>$message</font>", HtmlCompat.FROM_HTML_MODE_LEGACY))
             val scrollAmount = tvLogs.layout.getLineTop(tvLogs.lineCount) - tvLogs.height
             if (scrollAmount > 0) tvLogs.scrollTo(0, scrollAmount)
         }
     }
 
     private fun runAutomationLoop() {
-        val service = AutoClickService.instance
-        if (service == null) {
-            isRunning = false
-            return
-        }
+        val service = AutoClickService.instance ?: return
 
         while (isRunning) {
             log("[*] Đang nhận diện nhiệm vụ...", "#FFFFFF")
             var currentJob = ""
-
             var scanRetries = 0
+
             while (isRunning) {
                 scanRetries++
-                
-                // Kéo giãn luồng nếu tool bị kẹt ở màn hình cũ
-                if (scanRetries % 15 == 0) {
-                    launchTargetApp()
-                }
+                if (scanRetries % 15 == 0) launchTargetApp()
 
                 if (service.checkTextExists("completed the task", "Error", "Unfollow after completing")) {
                     val skipCoords = service.findCoordinatesByText("Skip", "Bỏ qua")
@@ -144,13 +118,12 @@ class MainActivity : AppCompatActivity() {
                 val followCoords = service.findCoordinatesByText("Follow +", "Theo dõi +")
                 val likeCoords = service.findCoordinatesByText("Like +", "Thích +")
                 val skipCoords = service.findCoordinatesByText("Skip", "Bỏ qua")
-                
                 var jobFound = false
                 
                 if (jobMode == "FOLLOW") {
                     if (likeCoords != null) {
                         if (skipCoords != null) service.tap(skipCoords.first, skipCoords.second)
-                        log("-> Sai loại Job (Tym) -> ĐÃ SKIP!", "#FFA500")
+                        log("-> Sai loại Job (Tym) -> SKIP!", "#FFA500")
                         Thread.sleep(1000)
                         continue
                     }
@@ -162,7 +135,7 @@ class MainActivity : AppCompatActivity() {
                 } else if (jobMode == "LIKE") {
                     if (followCoords != null) {
                         if (skipCoords != null) service.tap(skipCoords.first, skipCoords.second)
-                        log("-> Sai loại Job (Follow) -> ĐÃ SKIP!", "#FFA500")
+                        log("-> Sai loại Job (Follow) -> SKIP!", "#FFA500")
                         Thread.sleep(1000)
                         continue
                     }
@@ -187,7 +160,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (!isRunning) break
-            log("[+] Vào TikTok xử lý...", "#00FFFF")
             Thread.sleep(tiktokLoadDelay)
 
             if (currentJob == "like") {
@@ -198,21 +170,14 @@ class MainActivity : AppCompatActivity() {
                 Thread.sleep(1000)
             } else if (currentJob == "follow") {
                 val coords = service.findCoordinatesByText("Follow", "Theo dõi", "Follow button")
-                if (coords != null) {
-                    service.tap(coords.first, coords.second)
-                } else {
-                    service.tap(900, 800)
-                }
+                if (coords != null) service.tap(coords.first, coords.second) else service.tap(900, 800)
                 log("-> Đã Follow!", "#00FF00")
                 Thread.sleep(1000)
             }
 
             if (!isRunning) break
-            
-            // Gọi lại app mục tiêu sau khi xử lý xong TikTok
             launchTargetApp()
             Thread.sleep(returnDelay)
-            
             earnedCoins += 10
             log("[] []Hoàn thành! Đã chạy: $earnedCoins xu[] []", "#BF00FF")
         }
