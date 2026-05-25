@@ -83,45 +83,6 @@
             android:fontFamily="monospace" />
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="▶ Cấu hình Địa chỉ IP ADB (IP:PORT):"
-        android:textColor="@color/green_server"
-        android:fontFamily="monospace" />
-
-    <EditText
-        android:id="@+id/etAdbIp"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:background="@color/gray_bg"
-        android:textColor="@color/white"
-        android:text="127.0.0.1:5555"
-        android:paddingStart="8dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="10dp"
-        android:fontFamily="monospace" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="▶ Nhập số xu mục tiêu cần chạy để dừng:"
-        android:textColor="@color/teal_neon"
-        android:fontFamily="monospace" />
-
-    <EditText
-        android:id="@+id/etTargetCoin"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:background="@color/gray_bg"
-        android:textColor="@color/white"
-        android:text="1000"
-        android:inputType="number"
-        android:paddingStart="8dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="16dp"
-        android:fontFamily="monospace" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
