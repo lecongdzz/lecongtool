@@ -24,6 +24,7 @@ jobs:
         echo 'pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }' > settings.gradle.kts
         echo 'dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }' >> settings.gradle.kts
         echo 'rootProject.name = "lecongtool"' >> settings.gradle.kts
+        echo 'include(":app")' >> settings.gradle.kts
         echo 'plugins { id("com.android.application") version "8.2.0" apply false; id("org.jetbrains.kotlin.android") version "1.9.0" apply false }' > build.gradle.kts
         echo 'android.useAndroidX=true' > gradle.properties
         echo 'android.nonTransitiveRClass=true' >> gradle.properties
@@ -45,4 +46,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: lecongtool-APK-Perfect
-        path: app/build/outputs/apk/debug/a-debug.apk
+        path: app/build/outputs/apk/debug/*.apk
