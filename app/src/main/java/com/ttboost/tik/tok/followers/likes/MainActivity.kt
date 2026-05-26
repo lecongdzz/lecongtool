@@ -1,17 +1,18 @@
 package com.lecongtool.proapp
 
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.Html
 import android.widget.Button
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
 
     private lateinit var tvLog: TextView
 
@@ -32,7 +33,13 @@ class MainActivity : AppCompatActivity() {
         val btnChiTym = findViewById<Button>(R.id.btnChiTym)
         val btnStop = findViewById<Button>(R.id.btnStopEmergency)
 
-        registerReceiver(logReceiver, IntentFilter("TOOL_LOG_BROADCAST"), RECEIVER_EXPORTED)
+        // Fix lỗi crash CI liên quan đến API 33+ (RECEIVER_EXPORTED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(logReceiver, IntentFilter("TOOL_LOG_BROADCAST"), Context.RECEIVER_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(logReceiver, IntentFilter("TOOL_LOG_BROADCAST"))
+        }
 
         btnChiTym.setOnClickListener {
             appendLog("<font color='#00FFFF'>[*] CHẾ ĐỘ: Chỉ Tym</font>")
@@ -53,16 +60,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun appendLog(htmlMessage: String) {
         runOnUiThread {
-            val currentText = tvLog.text.toString()
-            // Dùng Html.fromHtml để hiển thị màu chữ theo thẻ <font>
-            tvLog.append(Html.fromHtml("<br>$htmlMessage", Html.FROM_HTML_MODE_LEGACY))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                tvLog.append(Html.fromHtml("<br>$htmlMessage", Html.FROM_HTML_MODE_LEGACY))
+            } else {
+                tvLog.append(Html.fromHtml("<br>$htmlMessage"))
+            }
         }
     }
 
-    // Hàm check xem quyền Trợ năng đã được bật chưa
-    private fun isAccessibilityServiceEnabled(context: Context, service: Class<out android.accessibilityservice.AccessibilityService>): Boolean {
+    private fun isAccessibilityServiceEnabled(context: Context, service: Class<*>): Boolean {
         val prefString = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
         return prefString?.contains(context.packageName + "/" + service.name) == true
     }
