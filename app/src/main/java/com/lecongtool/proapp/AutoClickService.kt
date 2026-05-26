@@ -4,18 +4,27 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.content.Intent
 import android.graphics.Path
+import android.os.Handler
+import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
-import kotlinx.coroutines.*
 
 class AutoClickService : AccessibilityService() {
 
-    // CHÍNH XÁC PACKAGE CỦA APP TTBOOST
     private val TARGET_PACKAGE = "com.ttboost.tik.tok.followers.likes"
     private var isRunning = false
-    private val serviceScope = CoroutineScope(Dispatchers.Default)
+    private var isJobRunning = false
+    
+    // Sử dụng Handler nguyên bản thay cho Coroutines
+    private val handler = Handler(Looper.getMainLooper())
 
-    override fun onServiceConnected() {
-        super.onServiceConnected()
+    private val autoClickRunnable = object : Runnable {
+        override fun run() {
+            if (isRunning && isJobRunning) {
+                performClick(500f, 1000f)
+                val randomDelay = (1000..2500).random().toLong()
+                handler.postDelayed(this, randomDelay)
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -27,6 +36,8 @@ class AutoClickService : AccessibilityService() {
             }
             "STOP" -> {
                 isRunning = false
+                isJobRunning = false
+                handler.removeCallbacks(autoClickRunnable)
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -37,31 +48,21 @@ class AutoClickService : AccessibilityService() {
         
         val currentPackage = event.packageName?.toString()
         
-        // KIỂM TRA ĐÚNG APP ĐÍCH MỚI CHẠY AUTO
         if (currentPackage != TARGET_PACKAGE) {
             sendLogToUI("<font color='#FFA500'>[⚠] Không tìm thấy App TTBoost!</font>")
+            isJobRunning = false
+            handler.removeCallbacks(autoClickRunnable)
         } else {
-            // Đã vào đúng TTBoost -> Bắt đầu click tim
-            startAutoTymJob()
+            if (!isJobRunning) {
+                startAutoTymJob()
+            }
         }
     }
 
-    private var isJobRunning = false
     private fun startAutoTymJob() {
-        if (isJobRunning) return
         isJobRunning = true
-        
-        serviceScope.launch {
-            sendLogToUI("<font color='#00FF00'>[+] Đã tìm thấy TTBoost. Tiến hành Auto Tym!</font>")
-            while (isRunning) {
-                // Tọa độ click Tym (Giả lập màn hình Oppo)
-                performClick(500f, 1000f) 
-                
-                // Delay an toàn tránh dính spam
-                delay((1000..2500).random().toLong()) 
-            }
-            isJobRunning = false
-        }
+        sendLogToUI("<font color='#00FF00'>[+] Đã tìm thấy TTBoost. Tiến hành Auto Tym!</font>")
+        handler.post(autoClickRunnable)
     }
 
     private fun performClick(x: Float, y: Float) {
@@ -80,10 +81,14 @@ class AutoClickService : AccessibilityService() {
 
     override fun onInterrupt() {
         isRunning = false
+        isJobRunning = false
+        handler.removeCallbacks(autoClickRunnable)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        serviceScope.cancel()
+        isRunning = false
+        isJobRunning = false
+        handler.removeCallbacks(autoClickRunnable)
     }
 }
