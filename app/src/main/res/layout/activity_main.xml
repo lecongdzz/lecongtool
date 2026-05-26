@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black_bg"
+    android:background="#000000"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -10,78 +10,27 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="TTBoost Automation VIP - Adm Lê Công"
-        android:textColor="@color/teal_neon"
-        android:textSize="16sp"
+        android:textColor="#00FFFF"
+        android:textSize="18sp"
         android:textStyle="bold"
-        android:fontFamily="monospace"
-        android:paddingBottom="10dp" />
+        android:paddingBottom="16dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#222222"
         android:orientation="vertical"
-        android:background="@color/gray_bg"
         android:padding="10dp"
-        android:layout_marginBottom="10dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🌐 Website: tangtuongtacsieure.com"
-            android:textColor="@color/teal_neon"
-            android:fontFamily="monospace" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="💻 Powered by Viettask Software"
-            android:textColor="@color/teal_neon"
-            android:fontFamily="monospace"
-            android:layout_marginTop="4dp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:layout_marginBottom="16dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="👑 CEO FOUNDER VIETTASK GROUP"
-            android:textColor="@color/purple_neon"
-            android:textStyle="bold"
-            android:fontFamily="monospace" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="👤 [b]LƯƠNG HUỲNH ĐỨC (NHÀ SÁNG LẬP)[/b]"
-            android:textColor="@color/gold_ceo"
-            android:fontFamily="monospace" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="📞 SĐT: 0886317315"
-            android:textColor="@color/gold_ceo"
-            android:fontFamily="monospace" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚙️ LƯƠNG TRƯỜNG PHƯỚC (VẬN HÀNH SERVER)"
-            android:textColor="@color/green_server"
-            android:fontFamily="monospace" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="👨‍💻 LẬP TRÌNH VIÊN: LÊ CÔNG"
-            android:textColor="@color/pink_programmer"
-            android:fontFamily="monospace" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🌐 Website: tangtuongtacsieure.com" android:textColor="#00FFFF" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="💻 Powered by Viettask Software" android:textColor="#00FFFF" />
     </LinearLayout>
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="👑 CEO FOUNDER VIETTASK GROUP" android:textColor="#FF00FF" android:textStyle="bold"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="👤 [b]LƯƠNG HUỲNH ĐỨC (NHÀ SÁNG LẬP)[/b]" android:textColor="#00FFFF" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📞 SĐT: 0886317315" android:textColor="#AAAAAA" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⚙️ LƯƠNG TRƯỜNG PHƯỚC (VẬN HÀNH SERVER)" android:textColor="#00FF00" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="👨‍💻 LẬP TRÌNH VIÊN: LÊ CÔNG" android:textColor="#FF00FF" android:textStyle="bold" android:layout_marginBottom="16dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -89,73 +38,34 @@
         android:orientation="horizontal"
         android:weightSum="3"
         android:layout_marginBottom="16dp">
-
-        <Button
-            android:id="@+id/btnOnlyFollow"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:text="Chỉ Follow"
-            android:textColor="@color/teal_neon"
-            android:backgroundTint="@color/teal_dark"
-            android:layout_marginEnd="4dp"
-            android:fontFamily="monospace" />
-
-        <Button
-            android:id="@+id/btnOnlyLike"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:text="Chỉ Tym"
-            android:textColor="@color/teal_neon"
-            android:backgroundTint="@color/teal_dark"
-            android:layout_marginEnd="4dp"
-            android:fontFamily="monospace" />
-
-        <Button
-            android:id="@+id/btnTotal"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:text="Tổng Lực"
-            android:textColor="@color/black_bg"
-            android:backgroundTint="@color/green_server"
-            android:fontFamily="monospace" />
+        <Button android:id="@+id/btnChi" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="CHỈ" android:backgroundTint="#008B8B" android:textColor="#FFFFFF" android:layout_marginEnd="4dp"/>
+        <Button android:id="@+id/btnChiTym" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="CHỈ TYM" android:backgroundTint="#008B8B" android:textColor="#FFFFFF" android:layout_marginEnd="4dp"/>
+        <Button android:id="@+id/btnTongLuc" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="TỔNG LỰC" android:backgroundTint="#00FF00" android:textColor="#000000" android:textStyle="bold"/>
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Log Trạng Thái:"
-        android:textColor="@color/white"
-        android:textStyle="bold"
-        android:fontFamily="monospace" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Log Trạng Thái:" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginBottom="8dp"/>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp"
-        android:background="@color/gray_bg"
-        android:padding="8dp">
-
+        android:background="#222222"
+        android:padding="10dp"
+        android:layout_marginBottom="16dp">
         <TextView
-            android:id="@+id/tvLogs"
+            android:id="@+id/tvLogStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/green_server"
-            android:fontFamily="monospace"
-            android:textSize="12sp" />
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
     </ScrollView>
 
     <Button
-        android:id="@+id/btnEmergencyStop"
+        android:id="@+id/btnStopEmergency"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="wrap_content"
         android:text="⏹ DỪNG TOOL AN TOÀN (EMERGENCY)"
-        android:textColor="@color/red_neon"
-        android:backgroundTint="@color/red_dark"
-        android:textStyle="bold"
-        android:fontFamily="monospace" />
+        android:backgroundTint="#8B0000"
+        android:textColor="#FF6347"
+        android:textStyle="bold"/>
 </LinearLayout>
