@@ -1,94 +1,39 @@
-package com.lecongtool.proapp
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.lecongtool.proapp">
 
-import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.GestureDescription
-import android.content.Intent
-import android.graphics.Path
-import android.os.Handler
-import android.os.Looper
-import android.view.accessibility.AccessibilityEvent
+    <queries>
+        <package android:name="com.ttboost.tik.tok.followers.likes" />
+    </queries>
 
-class AutoClickService : AccessibilityService() {
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    private val TARGET_PACKAGE = "com.ttboost.tik.tok.followers.likes"
-    private var isRunning = false
-    private var isJobRunning = false
-    
-    // Sử dụng Handler nguyên bản thay cho Coroutines
-    private val handler = Handler(Looper.getMainLooper())
+    <application
+        android:allowBackup="false"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:label="TTBoost VIP"
+        android:roundIcon="@android:drawable/sym_def_app_icon"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Light.NoTitleBar"> <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
-    private val autoClickRunnable = object : Runnable {
-        override fun run() {
-            if (isRunning && isJobRunning) {
-                performClick(500f, 1000f)
-                val randomDelay = (1000..2500).random().toLong()
-                handler.postDelayed(this, randomDelay)
-            }
-        }
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.getStringExtra("ACTION")) {
-            "START_TYM" -> {
-                isRunning = true
-                sendLogToUI("<font color='#00FF00'>[+] Khởi động Auto...</font>")
-                sendLogToUI("<font color='#FFFFFF'>[*] Đang nhận diện nhiệm vụ...</font>")
-            }
-            "STOP" -> {
-                isRunning = false
-                isJobRunning = false
-                handler.removeCallbacks(autoClickRunnable)
-            }
-        }
-        return super.onStartCommand(intent, flags, startId)
-    }
-
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (!isRunning || event == null) return
-        
-        val currentPackage = event.packageName?.toString()
-        
-        if (currentPackage != TARGET_PACKAGE) {
-            sendLogToUI("<font color='#FFA500'>[⚠] Không tìm thấy App TTBoost!</font>")
-            isJobRunning = false
-            handler.removeCallbacks(autoClickRunnable)
-        } else {
-            if (!isJobRunning) {
-                startAutoTymJob()
-            }
-        }
-    }
-
-    private fun startAutoTymJob() {
-        isJobRunning = true
-        sendLogToUI("<font color='#00FF00'>[+] Đã tìm thấy TTBoost. Tiến hành Auto Tym!</font>")
-        handler.post(autoClickRunnable)
-    }
-
-    private fun performClick(x: Float, y: Float) {
-        val path = Path().apply { moveTo(x, y) }
-        val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 50))
-            .build()
-        dispatchGesture(gesture, null, null)
-    }
-
-    private fun sendLogToUI(message: String) {
-        val intent = Intent("TOOL_LOG_BROADCAST")
-        intent.putExtra("LOG_MESSAGE", message)
-        sendBroadcast(intent)
-    }
-
-    override fun onInterrupt() {
-        isRunning = false
-        isJobRunning = false
-        handler.removeCallbacks(autoClickRunnable)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        isRunning = false
-        isJobRunning = false
-        handler.removeCallbacks(autoClickRunnable)
-    }
-}
+        <service
+            android:name=".AutoClickService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+    </application>
+</manifest>
